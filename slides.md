@@ -1,17 +1,21 @@
 ---
-theme: ../lukas/
+theme: ../slidev-theme-neversink/
 fonts:
-  sans: Robot
+  sans: Roboto
+  mono: Roboto Mono
+  serif: Roboto Condensed
 drawings:
   persist: false
 mdc: true
+colorSchema: light
 
-layout: intro
+layout: cover
 transition: slide-left
 ---
 
 # Self-hosting k8s
-The pragmatic way
+**Lukas Rammelmüller**,_TNG Technology Consulting_ <a href="https://tngtech.com" class="ns-c-iconlink"><mdi-open-in-new /></a>  
+
 
 <!--
 -->
@@ -23,112 +27,170 @@ layout: default
 # What will we do today?
 
 - **Quick k8s refresher** - What does kubernetes solve for us?
-- **Managed k8s vs. self-hosting** - Why is one harder than the other?
-- **(some) Tools for self hosting** - Standards, easy solutions, ...
+- **Why k8s?** - When should we use it and how?
+- **Managed k8s vs. self-hosting** - Why is one harder than the other? Should we even self-host?
+- **Blueprint for self hosting** - Pragmatic solutions that get the job done
 - **GitOps "deepdive"** - Why and how to use pull-based config
+
+<br>
+<br>
+<br>
+
+<v-click>
+... and <b>not </b> do! 
+
+- not a k8s 101
+- not a full CNCF landscape tour
+- not a security / DR deep dive
+
+</v-click>
+
+<StickyNote  color="emerald-light" textAlign="left" width="180px"  v-drag="[632,176,304,246,5]">
+
+<h3> After the lecture, you should have .. </h3>
+
+- .. a clear understanding when it is viable to self-host k8s
+- .. a list of standard go-to tools 
+- .. the urge to use GitOps right away
+
+</StickyNote>
 
 
 <!--
-Here is another comment.
+Assumptions:
+- You know containers and basic k8s concepts (Pods, Deployments, Services)
+- Some idea of infrastructure
+
+Goals:""
+- Help you decide *whether* to self‑host k8s
+- Give you a pragmatic blueprint *if* you do
 -->
 
 
-# Pragmatic k8s self‑hosting
-
-Opinionated, battle‑tested choices for running your own cluster
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# Agenda
 
-1. Why Kubernetes for this problem?
-2. What we actually want: reliability, security, operability
-3. Managed vs. self‑managed: should you even self‑host?
-4. Life of a self‑hosted cluster: Day 0 / 1 / 2+
-5. Pragmatic component choices
-   - OS, k8s distro, cluster formation
-   - Networking, storage, backup, security, observability
-6. GitOps as the glue
-7. Summary & decision framework
-
----
-layout: default
----
-
-# Assumptions & non‑goals
-
-**Assumptions**
-
-- You know containers and basic k8s concepts (Pods, Deployments, Services)
-- You care about infrastructure or have ops responsibilities
-
-**Non‑goals**
-
-- Not a k8s 101
-- Not a full CNCF landscape tour
-- Not a security / DR deep dive
-
-**Goal**
-
-- Help you decide *whether* to self‑host k8s
-- Give you a pragmatic blueprint *if* you do
-
----
-layout: default
----
+::title::
 
 # Why containers?
 
+::left::
+
 - Most software today is rolled out as **images / containers**
 - Why?
-  - Portable across environments
-  - Good isolation & security primitives
-  - Convenient build → ship → run pipeline
+  - ==Portable== across environments
+  - Good ==isolation== & security primitives
+  - ==Convenient== build → ship → run pipeline
 - But:
   - Many containers → many moving parts
   - Need orchestration, scheduling, networking, lifecycle mgmt
 
----
-layout: default
----
+:: right ::
 
-# Enter Kubernetes
+<div v-click=1>
 
-- Kubernetes = orchestrator for containers
-- Around since ~2014, CNCF since 2016
+- [Kubernetes](https://github.com/kubernetes/kubernetes) = ==orchestrator== for containers
+  - Around since ~2014, CNCF since 2016
+  - Wildly popular <span class='small'>(second-largest OSS project after Linux, as of 2024 71% of fortune 100 companies use it as their primary container orchestrator, ...)</span>
 - What does it do for us?
-  - Schedules workloads on nodes
-  - Handles restarts, placement, health checks
-  - Provides service discovery & basic load balancing
+  - ==Schedules== workloads on nodes
+  - Handles failover <span class='small'>(restarts, health checks, rollouts, ...)</span>
+  - Abstracts many otherwise complicated topics <span class='small'>(very importantly: networking!)</span>
   - Offers a rich API for infra & app configuration
 
+</div>
+
+::note::
+
+\[1\] You may often hear "docker container" - same thing, misnaming for historic reasons
+
+<!-- 
+- These days most software is rolled out as images / containers
+- Why? Portable, secure, convenient
+- Orchestrator for containers -> Kubernetes
+- Around since 2016
+- What does it do for us?
+  - Abstracts away many complexities (networking, failover, ...)
+- Still a complex framework - not for every use-case (not everything is a nail).
+  - In fact, one of the main complaints and drawbacks
+  - Particularly if microservices are involved, this is at the moment one of the easiest solutions
+ -->
+
 ---
-layout: default
+layout: two-cols-title
+columns: is-5
 ---
 
-# k8s: not a magic hammer
+::title::
 
-- Powerful, but **complex**
-  - Many concepts (Pods, Deployments, Services, Ingress, CRDs, …)
+<h1> <img src="/img/k8s.png" width="60px"> k8s <span v-click=1 style="font-size: 3rem"> - not a magic hammer</span></h1>
+
+:: left ::
+
+Core k8s API refresher:
+
+- `Namespace` – tenant / logical grouping
+- `Deployment` – manages Pods, rolling updates
+- `Service` – stable virtual IP / DNS for a set of Pods
+- `Ingress` – HTTP(S) entry into the cluster ^1^
+- `ConfigMap` / `Secret` – configuration & secret data
+- `PersistentVolume` / `PersistentVolumeClaim` – storage abstraction
+- ... and **many** more
+
+::right::
+
+<div v-click=1>
+
+- Powerful, but ==complex==
+  - Many concepts
   - Many moving parts (API server, etcd, controller manager, scheduler, …)
-- Not every workload needs k8s
+- Not every workload needs k8s (**YAGNI?**)
   - Simple monolith on a VM might be enough
+  - Sometimes a docker-compose setup will do
 - But:
-  - For microservices / multi‑team platforms
+  - For microservices / multi‑team ==platforms==
   - For standardized deployments
-  - For hybrid / multi‑environment setups  
-  → k8s is often the *least bad* option
+  - For hybrid / multi‑environment setups
+  → k8s is often the ==least bad== option
+
+</div>
+
+<!-- 
+Quick overview: 
+- How to even interact with a cluster
+- Before we move on: Make sure everyone has a fresh memory of k8s API objects
+
+Is k8s only good?  
+- Still a complex framework - not for every use-case (not everything is a nail).
+  - In fact, one of the main complaints and drawbacks
+  - Particularly if microservices are involved, this is at the moment one of the easiest solutions
+- Despite the complexity, it is the go-to platform tool for many
+  - Ecosystem is great
+  - Alternative: Self-stitch together a platform that does all that for us.
+  - Any self-built solution, though, inevitably resembles k8s
+ - One of the greatest things though: There's a solution for many problems
+
+
+> Any serious home‑grown "platform" tends to reinvent parts of k8s
+
+
+ -->
 
 ---
-layout: two-cols
+layout: image
+image: img/cncf.png
 ---
 
-# Ecosystem & adoption
+<StickyNote v-click=1 color="red-light" textAlign="center" width="180px"  v-drag="[383,179,215,185,5]">
+<br>
+<h1>There's a tool for that!</h1>
 
-::left::
+</StickyNote>
 
+<!--
 - Huge ecosystem and community
 - Second‑largest OSS project after Linux
 - Thousands of tools & extensions:
@@ -136,13 +198,10 @@ layout: two-cols
   - Operators, GitOps controllers
   - Observability, security, policy engines
 
-::right::
-
-- Primary container orchestration tool for **71% of Fortune 100**
+- Primary container orchestration tool for 71% of Fortune 100
 - Broad vendor support (clouds, on‑prem distros)
 - Dedicated meetups, conferences, SIGs
-
-> Any serious home‑grown “platform” tends to reinvent parts of k8s.
+-->
 
 ---
 layout: default
@@ -152,13 +211,13 @@ layout: default
 
 We want to run workloads that are:
 
-- **Stable & resilient**
+- Stable & resilient
   - Survive node failures
   - Roll out updates safely
-- **Secure**
+- Secure
   - Reasonable default posture
   - Least privilege, isolation, secrets management
-- **Operationally viable**
+- Operationally viable
   - On‑call should be bearable
   - Limited human time for maintenance
   - New people can be productive quickly
@@ -169,55 +228,47 @@ layout: default
 
 # Constraints drive design
 
-A “reliable system” must name its constraints:
+A "reliable system" must name its constraints:
 
-- **SLO / availability target**
+- SLO / availability target
   - 99% (3.65 days / year) vs 99.99% (~52 mins / year)
   - Higher SLO → more complexity, more infra, more process
-- **RPO / RTO**
+- RPO / RTO
   - How much data loss is acceptable?
   - How quickly must we recover?
-- **Team & skills**
+- Team & skills
   - How many people can realistically work on infra?
-- **Regulatory / environment**
+- Regulatory / environment
   - Cloud OK? On‑prem / air‑gapped? Sovereign cloud?
 
-We’ll see these again when deciding **managed vs self‑hosted**.
+We'll see these again when deciding managed vs self‑hosted.
+
+
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# Quick API refresher (very brief)
+::title::
 
-Core k8s objects we’ll assume:
+# Managed k8s - the `easy` way
 
-- **Namespace** – tenant / logical grouping
-- **Deployment** – manages Pods, rolling updates
-- **Service** – stable virtual IP / DNS for a set of Pods
-- **Ingress / Gateway** – HTTP(S) entry into the cluster
-- **ConfigMap / Secret** – configuration & secret data
-- **PersistentVolume (PV) / PersistentVolumeClaim (PVC)** – storage abstraction
+::left::
 
-We won’t do k8s 101, but we’ll refer to these.
-
----
-layout: default
----
-
-# Managed k8s: the easy way
-
-- Go to your favourite cloud vendor and click:
+Go to your favourite cloud vendor and click:
   - AWS EKS, Azure AKS, GCP GKE
   - Or regional providers: Stackit, Hetzner, …
-- What you get:
-  - Managed **control plane**:
-    - API server, etcd, scheduler, controllers
-    - Patching, upgrades, availability
-  - Integration with cloud:
-    - Load balancers, disks, IAM
 
-You still own:
+
+What you get:
+- Managed control plane:
+  - API server, etcd, scheduler, controllers
+  - Patching, upgrades, availability
+- Integration with cloud:
+  - Load balancers, disks, IAM
+
+::right::
+You still own some aspects <span class='small'> (depending on the vendor)</span>
 
 - Node sizing, OS patching (often)
 - Networking layout
@@ -225,24 +276,25 @@ You still own:
 - Workload design
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
 # Managed k8s – cost perspective (qualitative)
 
 ::left::
 
-What you **pay** for:
+
+What you pay for:
 
 - Control plane time (cluster fee)
 - Worker nodes (VMs)
 - Data transfer, storage, LB, etc.
 
-What you **save**:
+What you save:
 
 - No etcd / control plane ops
 - Less effort on upgrades & HA
-- Fewer “oh no, the control plane is down at 2am” incidents
+- Fewer "oh no, the control plane is down at 2am" incidents
 
 ::right::
 
@@ -253,13 +305,13 @@ Total cost of ownership:
 
 **Rule of thumb**
 
-- If you’re already in a major cloud and don’t have special constraints, managed k8s is usually cheaper overall.
+- If you're already in a major cloud and don't have special constraints, managed k8s is usually cheaper overall.
 
 ---
 layout: default
 ---
 
-# What does “self‑managed k8s” mean?
+# What does "self‑managed k8s" mean?
 
 Self‑management can mean:
 
@@ -269,10 +321,10 @@ Self‑management can mean:
 
 What unites them:
 
-- You own the **control plane lifecycle**  
+- You own the control plane lifecycle
   (install, upgrade, backup, restore)
-- You own **node lifecycle**
-- You build (some of) the “cloud magic” yourself:
+- You own node lifecycle
+- You build (some of) the "cloud magic" yourself:
   - Load balancing
   - Storage
   - Networking
@@ -280,14 +332,15 @@ What unites them:
   - Security policies & enforcement
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
-# Managed vs. self‑managed (high‑level)
+# Managed vs. self‑managed 
 
 ::left::
 
 **Managed k8s**
+
 
 - Control plane:
   - Operated by provider
@@ -317,12 +370,12 @@ layout: two-cols
   - Works on‑prem / sovereign / air‑gapped
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
+::left::
 # When you probably should self‑host
 
-::left::
 
 Self‑host is reasonable if:
 
@@ -330,7 +383,7 @@ Self‑host is reasonable if:
   - On‑prem
   - Air‑gapped
   - Sovereign cloud w/o managed k8s
-- You need **customization**:
+- You need customization:
   - Special networking needs
   - Tight control over k8s internals
 
@@ -347,30 +400,30 @@ And you have:
 Otherwise you risk a brittle, snowflake cluster.
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
 
+::left::
 # When you probably should not self‑host
 
-::left::
 
 Think twice about self‑hosting if:
 
-- You’re already on AWS/Azure/GCP
+- You're already on AWS/Azure/GCP
 - You have a small team
-- You don’t have hard regulatory / locality constraints
+- You don't have hard regulatory / locality constraints
 - Your SLO is modest (e.g. 99%–99.9%)
 
 ::right::
 
 Typical symptoms:
 
-- “We’ll figure out backups later”
-- “Networking will be easy, right?”
-- “We don’t have time for DR tests”
+- "We'll figure out backups later"
+- "Networking will be easy, right?"
+- "We don't have time for DR tests"
 
-> If you don’t have strong reasons *for* self‑hosting,  
-> your default should be **managed k8s**.
+> If you don't have strong reasons *for* self‑hosting,
+> your default should be managed k8s.
 
 ---
 layout: center
@@ -387,21 +440,21 @@ layout: default
 
 # Life of a self‑hosted cluster
 
-**Day 0 – Bootstrapping**
+**Day 0** – Bootstrapping
 
 - Provision hardware / VMs
 - Install OS
 - Install k8s distro
 - Form initial control plane & worker set
 
-**Day 1 – First workloads**
+**Day 1** – First workloads
 
 - Install CNI, ingress, cert management
 - Set up observability (metrics/logs)
 - Set basic security guardrails
 - Deploy initial apps
 
-**Day 2+ – Operations**
+**Day 2+** – Operations
 
 - Regular upgrades (OS, k8s, addons)
 - Capacity changes (scale out/in)
@@ -543,8 +596,8 @@ Why I like it for self‑hosting:
 
 Alternatives for small setups:
 
-- **k3s** – lightweight, great for edge / small clusters
-- **microk8s** – simple developer / lab environment
+- k3s – lightweight, great for edge / small clusters
+- microk8s – simple developer / lab environment
 
 ---
 layout: default
@@ -690,20 +743,20 @@ layout: default
 
 # Pragmatic storage pattern
 
-1. **In‑cluster replicated storage**
-   - Back most PVCs with a replicated storage solution
-   - Works well for:
-     - Stateful apps that can tolerate some downtime
-     - Smaller clusters
+1. In‑cluster replicated storage
+    - Back most PVCs with a replicated storage solution
+    - Works well for:
+      - Stateful apps that can tolerate some downtime
+      - Smaller clusters
 
-2. **Off‑cluster backups**
-   - Regular backups of volumes or DBs
-   - Target: object storage (S3, compatible, etc.)
+2. Off‑cluster backups
+    - Regular backups of volumes or DBs
+    - Target: object storage (S3, compatible, etc.)
 
-3. **Critical databases**
-   - Consider:
-     - DB‑native replication + backups
-     - Possibly dedicated infrastructure
+3. Critical databases
+    - Consider:
+      - DB‑native replication + backups
+      - Possibly dedicated infrastructure
 
 ---
 layout: default
@@ -725,7 +778,7 @@ How it fits:
 - Longhorn → manages volumes replicated across nodes
 - Backup → to external object storage
 
-Why it’s pragmatic:
+Why it's pragmatic:
 
 - Easy to install and operate (relative to alternatives)
 - Works well for small/medium self‑hosted clusters
@@ -784,7 +837,7 @@ layout: default
 
 # Security: a continuous concern
 
-Security is not a single setup step; it’s a **mindset**.
+Security is not a single setup step; it's a mindset.
 
 k8s helps with:
 
@@ -876,8 +929,8 @@ layout: center
 
 # GitOps
 
-Making k8s operations and deployments  
-**boring, repeatable and auditable**
+Making k8s operations and deployments
+boring, repeatable and auditable
 
 ---
 layout: default
@@ -1091,12 +1144,13 @@ layout: center
 # Summary & decision framework
 
 ---
-layout: two-cols
+layout: two-cols-header
 ---
+
+::left::
 
 # Pragmatic self‑hosted stack (cheat sheet)
 
-::left::
 
 **Infra & OS**
 
@@ -1107,12 +1161,12 @@ layout: two-cols
 
 **Kubernetes**
 
-- Distro: **rke2**
-- Small edge clusters: **k3s**
+- Distro: rke2
+- Small edge clusters: k3s
 
 **Networking**
 
-- CNI: **Cilium**
+- CNI: Cilium
 - Ingress: NGINX or Traefik
 - TLS: `cert-manager`
 - Bare‑metal LB: MetalLB / kube‑vip
@@ -1121,7 +1175,7 @@ layout: two-cols
 
 **Storage & backup**
 
-- Storage: **Longhorn**
+- Storage: Longhorn
 - Backups:
   - etcd snapshots
   - Velero (or similar) for PVs
@@ -1178,14 +1232,14 @@ layout: default
 - Must run on‑prem / air‑gapped / sovereign?
   - Self‑hosting is often justified
 - Team size & skills:
-  - If you cannot afford at least some **dedicated infra capacity** (and regular DR tests), think twice
+  - If you cannot afford at least some dedicated infra capacity (and regular DR tests), think twice
 - SLO:
   - The higher your SLO, the more discipline you need:
     - GitOps
     - Observability
     - Tested backups and DR
 
-Self‑hosting is powerful, but should be a **conscious** choice.
+Self‑hosting is powerful, but should be a conscious choice.
 
 ---
 layout: center

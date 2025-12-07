@@ -1,0 +1,14 @@
+* {
+    font-weight: 200;
+    font-size: 0.9rem;
+}
+
+h1 {
+    font-size: 3rem !important;
+    margin-bottom: 3rem !important;
+}
+
+.small {
+    font-size: 0.7rem;
+    color: rgb(110, 107, 107);
+}
