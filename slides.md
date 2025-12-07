@@ -8,17 +8,24 @@ drawings:
   persist: false
 mdc: true
 colorSchema: light
+color: light
 
 layout: cover
 transition: slide-left
 ---
 
 # Self-hosting k8s
-**Lukas Rammelmüller**,_TNG Technology Consulting_ <a href="https://tngtech.com" class="ns-c-iconlink"><mdi-open-in-new /></a>  
 
+<div style="margin-top: -2rem">
 
-<!--
--->
+The ==pragmatic== way
+
+</div>
+
+<img src="/img/TNG-Logo_groß_mitSchutzzone_weiß.svg"  v-drag="[745,-53,215,186]">
+
+::note::
+**Lukas Rammelmüller**,_TNG Technology Consulting_ <a href="https://tngtech.com" class="ns-c-iconlink"><mdi-open-in-new /></a>
 
 ---
 layout: default
@@ -132,12 +139,12 @@ columns: is-5
 
 Core k8s API refresher:
 
-- `Namespace` – tenant / logical grouping
-- `Deployment` – manages Pods, rolling updates
-- `Service` – stable virtual IP / DNS for a set of Pods
-- `Ingress` – HTTP(S) entry into the cluster ^1^
-- `ConfigMap` / `Secret` – configuration & secret data
-- `PersistentVolume` / `PersistentVolumeClaim` – storage abstraction
+- `Namespace` - tenant / logical grouping
+- `Deployment` - manages Pods, rolling updates
+- `Service` - stable virtual IP / DNS for a set of Pods
+- `Ingress` - HTTP(S) entry into the cluster ^1^
+- `ConfigMap` / `Secret` - configuration & secret data
+- `PersistentVolume` / `PersistentVolumeClaim` - storage abstraction
 - ... and **many** more
 
 ::right::
@@ -276,10 +283,10 @@ You still own some aspects <span class='small'> (depending on the vendor)</span>
 - Workload design
 
 ---
-layout: two-cols-header
+layout: two-cols-title
 ---
 
-# Managed k8s – cost perspective (qualitative)
+# Managed k8s - cost perspective (qualitative)
 
 ::left::
 
@@ -332,7 +339,7 @@ What unites them:
   - Security policies & enforcement
 
 ---
-layout: two-cols-header
+layout: two-cols-title
 ---
 
 # Managed vs. self‑managed 
@@ -370,7 +377,7 @@ layout: two-cols-header
   - Works on‑prem / sovereign / air‑gapped
 
 ---
-layout: two-cols-header
+layout: two-cols-title
 ---
 
 ::left::
@@ -400,7 +407,7 @@ And you have:
 Otherwise you risk a brittle, snowflake cluster.
 
 ---
-layout: two-cols-header
+layout: two-cols-title
 ---
 
 ::left::
@@ -412,7 +419,7 @@ Think twice about self‑hosting if:
 - You're already on AWS/Azure/GCP
 - You have a small team
 - You don't have hard regulatory / locality constraints
-- Your SLO is modest (e.g. 99%–99.9%)
+- Your SLO is modest (e.g. 99%-99.9%)
 
 ::right::
 
@@ -426,7 +433,8 @@ Typical symptoms:
 > your default should be managed k8s.
 
 ---
-layout: center
+layout: section
+color: light
 ---
 
 # From decision to reality
@@ -440,50 +448,68 @@ layout: default
 
 # Life of a self‑hosted cluster
 
-**Day 0** – Bootstrapping
+<div style="display: flex; justify-content: space-between; margin-top: 6rem">
 
+<div>
+
+**Day 0** - ==Planning==
+- Decide cluster topology
+- Find suitable OS & k8s distro
+- Tool selection
+- Consider delivery pipeline
+</div>
+
+<div v-click=1>
+
+**Day 1** - ==Bootstrapping==
 - Provision hardware / VMs
-- Install OS
-- Install k8s distro
 - Form initial control plane & worker set
-
-**Day 1** – First workloads
-
-- Install CNI, ingress, cert management
-- Set up observability (metrics/logs)
-- Set basic security guardrails
+- Install CNI, ingress, cert management, ...
+- Set up basic security 
 - Deploy initial apps
+</div>
 
-**Day 2+** – Operations
+<div v-click=2>
 
-- Regular upgrades (OS, k8s, addons)
+**Day 2** - ==Operations== <span class="small">(aka, the grind)</span>
+- Regular upgrades (OS, k8s, ...)
+- Security updates, incident response
 - Capacity changes (scale out/in)
 - Backup & DR drills
-- Security updates, incident response
+- Refine observability (metrics/logs/traces)
+</div>
+
+</div>
+
+<br>
+<br>
+
+
+<Admonition title="Day 0 is (most) important!" color='emerald-light'  v-click=3>
+Strong planning in the beginning helps to avoid pain on Day 2 - this includes proper tooling!
+</Admonition>
+
 
 ---
 layout: default
 ---
 
-# Example: new k8s version is released
-
-What should happen in a healthy setup?
+# Typical example on day 2 - `upgrade k8s`
 
 1. **Plan**
-   - Review change impact
-   - Decide target version & timeline
+   - Review change impact <span class='small'>(Downtime?)</span>
+   - Decide [target version](https://kubernetes.io/docs/tasks/administer-cluster/cluster-upgrade/) & timeline
 2. **Update desired state**
-   - Update cluster config (e.g. distro version) in Git
+   - Update cluster config <span class='small'>(ideally IaC)</span>
 3. **Rollout**
-   - Control plane upgrades (one by one)
+   - Control plane upgrades <span class='small'>(highly available? proper failover?)</span>
    - Worker nodes drained, upgraded, returned to service
 4. **Verification**
    - Check metrics, logs, error budget
    - Run smoke tests
 5. **Fallback**
-   - If issues: roll back to previous version (again via Git)
+   - If issues: roll back to previous version <span class='small'>(Proper rollback mechanism in place?)</span>
 
-We’ll see how GitOps helps orchestrate this.
 
 ---
 layout: default
@@ -493,7 +519,7 @@ layout: default
 
 We need to solve, at minimum:
 
-- OS
+- Operating system (OS)
 - Kubernetes distro / flavor
 - Cluster formation & lifecycle
 - Networking (inside & outside)
@@ -505,40 +531,39 @@ We need to solve, at minimum:
 **We’ll look at pragmatic, opinionated OSS choices.**
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# OS: what do we actually need?
+::title::
+# OS considerations
 
-Two main patterns:
+::left::
 
-1. **Container‑only nodes**
-   - Nodes are treated as cattle
-   - Humans rarely SSH in
-   - Ideal for deterministic clusters
+### Container only clusters
 
-2. **Mixed usage**
-   - Example: AI clusters
-   - People run experiments, scripts, fine‑tuning jobs directly on nodes
-   - More drift, more risk
+- Humans rarely SSH in
+- Nodes are treated as ==cattle== (not pets)
 
-The OS choice follows from this.
-
----
-layout: default
----
-
-# OS recommendations
 
 **Container‑only clusters**
 
-- Prefer minimal, container‑optimized OS:
+- Prefer minimal, container‑optimized OS
+- Examples
   - Fedora CoreOS
-  - Talos
-  - Flatcar, etc.
+  - Flatcar
+  - Talos <span class="small">(fully API driven)</span>
 - Benefits:
-  - Immutable / declarative
+  - Immutable / declarative <span class="small">(very little config drift)</span>
   - Easier upgrades & reproducibility
+
+
+::right::
+
+
+###  Mixed usage clusters
+- Prime example: AI clusters
+- People run experiments, scripts, fine‑tuning jobs directly on nodes
+- More drift, more risk
 
 **Mixed‑use clusters**
 
@@ -546,49 +571,93 @@ layout: default
   - Ubuntu LTS, Debian, RHEL, …
 - Be aware:
   - Higher drift and config entropy
-  - Security & stability require more discipline
+  - Security & stability require more discipline <br>
+    <span class="small">(convention rather than strict enforcement)</span>
 
-> If possible, separate “playground” machines from k8s nodes.
+
+> If possible, separate “playground” machines from more productive nodes
+
+<!-- 
+
+- What do we need to consider? Not much.. but it depends on your use case
+- Ideal: Only containers, no interaction -> Something minimal that is OSS. Fedora Core OS is an excellent choice
+- Often: Mixed -> Some people need to access
+  - Prominent example: AI clusters. People need to do research, start scripts for fine tuning or “quickly try something”.
+  - Requires access to servers. Typically container-optimized OS don’t do so well, often read only.
+  - You’ll be fine with any OS, use one that the people know. I’ll admit: We have Ubuntu and it works (not my favorite choice). A better choice perhaps Debian?
+  - In the end we need to figure out which fight to fight.
+  - Watch out: Things happen (security is harder, scripts have memory leaks, ...)
+
+ -->
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# Kubernetes: vanilla vs distros
+::title::
 
-**Vanilla upstream k8s**
+# Kubernetes: vanilla vs. distros
+
+::left::
+
+### Vanilla upstream k8s
 
 - Core components as shipped by the project
 - Typically bootstrapped with `kubeadm` or similar
 - You assemble surrounding tooling
+- aka ["the hard way"](https://github.com/kelseyhightower/kubernetes-the-hard-way)
+::right::
 
-**Distributions**
+### Distributions
 
 - Upstream k8s +:
   - Opinionated defaults
   - Installers & upgrade tooling
   - Integrations (monitoring, registry, etc.)
-- Wide spectrum:
-  - Lightweight (k3s, k0s, microk8s)
-  - Full enterprise (OpenShift, etc.)
+- Wide spectrum  <span class="small">(60+ CNCF certified distros)</span>
+  - Lightweight: k3s, k0s, microk8s
+  - Full enterprise, e.g. OpenShift
 
-We’ll aim for something pragmatic in the middle.
+> We’ll aim for something pragmatic in the middle.
+
+::note::
+\[1\] https://www.mirantis.com/blog/kubernetes-distributions-which-option-is-best-for-your-organization-/
+
+<!-- 
+Vanilla” k8s vs. Distros
+- Vanilla
+  - "as is"
+  - no shortcuts
+- Distro
+  - Upstream packaged with defaults, tools and support
+    - Often their own container registry
+  - Often upgrade utilities, easy setup
+  - Varying degrees - from heavily integrated to lightweight
+  - [show CNCF landscape]
+  - If you want, all the versions of the cloud vendors are their own distributions (and heavily integrated at that)
+- What makes it different?
+  - Often easier workflow for setup, upgrade, patching
+  - Great integrations
+  - Cool for small deployments on the edge: k3s, micro-k8s
+  - The more enterprise, the more heavy
+
+ -->
 
 ---
 layout: default
 ---
 
-# Pragmatic pick: rke2
+# Solid pick - `rke2`
 
-**rke2 (Rancher Kubernetes Engine 2)**
+**[rke2](https://docs.rke2.io/) - Rancher Kubernetes Engine 2**
 
-- CNCF‑conformant Kubernetes distribution
-- Focus on:
-  - Secure defaults (hardened configuration)
-  - Simple install & upgrade
-  - Works on VMs and bare‑metal
+- CNCF‑conformant Kubernetes distribution <span class="small">(fully open source)</span>
+- Key features:
+  - ==Secure== defaults (hardened configuration)
+  - ==Simple== install & upgrade
+  - Works on VMs and ==bare‑metal==
 
-Why I like it for self‑hosting:
+Why it is good for self‑hosting:
 
 - Easy to get a secure cluster
 - Good documentation & ecosystem
@@ -596,152 +665,149 @@ Why I like it for self‑hosting:
 
 Alternatives for small setups:
 
-- k3s – lightweight, great for edge / small clusters
-- microk8s – simple developer / lab environment
+- k3s - lightweight, great for edge / small clusters
+- microk8s - simple developer / lab environment, but also OK for PROD
+
+
+<img src="/img/rke2-logo.png" v-drag="[606,354,294,95]">
+
+::note::
+\[1\] rke2 went by the name of "rancher government" in the past
+
+
+<!--
+- Tool of choice: rke2
+- Easy, secure by default
+- There’s others, for varying degrees of sophistication and use-cases
+-->
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# Cluster formation: from nodes to a cluster
+::title::
 
-Problem: Given some nodes, how do we:
+# Cluster formation - from `nodes` to `cluster`
 
-- Form a secure cluster?
+::left::
+
+<mark class='red'>Problem</mark> Given some nodes, how do we:
+
+- Initially form a cluster?
 - Add nodes?
 - Upgrade nodes?
 - Recover a broken node or control plane?
 
-Common approaches:
+Common <mark class='green'>solutions</mark>
 
-- Manual setup (good for learning, bad for prod)
+- Manual setup (good for learning, **bad** for PROD)
 - `kubeadm` + automation (Ansible, Terraform, …)
 - Distro‑specific installers (e.g. rke2/k3s installers)
 - Higher‑level frameworks (Cluster API, Rancher, …)
 - Network boot / PXE for large fleets
 
----
-layout: default
----
+::right::
 
-# Cluster formation: pragmatic advice
+<div v-click=1>
 
 For **small to mid‑size** clusters (up to ~20 nodes):
 
-- Use a distro with a clean bootstrap story:
-  - e.g. rke2
+- Use a distro with a clean bootstrap story (e.g. rke2)
 - Wrap it with **simple automation**:
-  - Cloud‑init, Ansible, or Terraform + scripts
-- Keep the process:
-  - Documented
-  - Re‑playable
-  - Versioned in Git
+  - Ansible, or Terraform + scripts
+  - For small clusters even a manual process is OK <span class='small'>(not great tho)</span>
+- Keep the process documented, re‑playable and versioned in `git`
 
-For **larger** clusters:
+<br>
 
-- Consider:
+For **larger** clusters consider:
   - PXE / network boot
-  - Centralized image mgmt
+  - Centralized image management
   - Cluster API or equivalent
 
-> Don’t over‑engineer provisioning for a 5‑node cluster.  
-> Don’t under‑engineer for a 200‑node fleet.
+<br>
+
+> Don’t over‑engineer provisioning for a 5‑node cluster <br>
+> Don’t under‑engineer for a 200‑node fleet
+
+</div>
+
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# Networking: two domains
+::title::
 
-We need to handle:
+# Networking - internal and external
 
-1. **Inside the cluster**
-   - Pod‑to‑Pod networking
-   - Services, DNS
-   - Network policies
+::left::
+### Inside the cluster
+- **CNI (Container Network Interface)** 
+- Pod‑to‑Pod / Pod-to-Node networking
+- Services, DNS
+- Network policies
 
-2. **Outside to inside**
-   - Client traffic into the cluster
-   - Ingress, TLS termination
-   - External load balancing
 
-We’ll pick one CNI and one ingress stack and stick to them.
+**Modern choice: Cilium** 
 
----
-layout: default
----
+<img src="/img/cilium.png"  v-drag="[184,263,66,65]">
 
-# In‑cluster networking: CNI
-
-**CNI (Container Network Interface)**
-
-- Pluggable mechanism to provide:
-  - Pod IPs
-  - Routing between Pods and nodes
-  - Network policies
-
-**Pragmatic choice: Cilium**
-
-- eBPF‑based networking
-- Features:
+- Killer features:
   - Transparent encryption between nodes
   - L3/L4/L7 network policies
   - Great observability (Hubble)
 - Works well on bare‑metal and cloud VMs
 
-Other solid options: Calico, etc.  
-Pick one and avoid switching later.
+Most important: Pick one and ==avoid switching later==
 
----
-layout: default
----
+::right::
 
-# Ingress & traffic from outside
+### Outside to inside
+- Client traffic into the cluster
+- External LB → Ingress controller → Services → Pods
+- Ingress, TLS termination
 
-Ingredients:
+<br>
+
+**Ingredients**
 
 - **Ingress controller**
-  - NGINX Ingress Controller
-  - or Traefik, or similar
+  - NGINX Ingress Controller is <mark class='red'>discontinued</mark>
+  - Replace with [Traefik](https://doc.traefik.io/traefik/reference/install-configuration/providers/kubernetes/kubernetes-ingress/)
 - **TLS certificates**
-  - `cert-manager` + ACME (Let’s Encrypt) or internal CA
+  - [cert-manager](https://cert-manager.io/) + ACME (Let’s Encrypt) or internal CA
 - **Load balancer**
-  - Cloud LB (if on cloud)
-  - MetalLB / kube‑vip for bare‑metal
+  - [MetalLB](https://metallb.io/) or Cilium (relatively new)
 
-Pattern:
 
-- External LB → Ingress controller → Services → Pods
-
-We’ll later see how GitOps manages their configuration.
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
+::title::
 # Storage: what problem are we solving?
 
-Need to store:
 
-- Caches / temp data for some services
-- Real state:
-  - Databases (Postgres, MySQL, etc.)
+::left::
+
+- Caches / temp data for some services <span class='small'>(not critical)</span>
+- Actual state:
+  - Databases
   - Message queues
   - User‑uploaded data
 
-Challenges:
+**Challenges**
 
-- Storage is **high risk, low perceived reward**
+- Storage is ==high risk, low perceived reward==
 - Everyone expects it to “just work”
 - When it doesn’t, the fallout is huge
 
-We need a pragmatic approach with backups.
+We need a solid approach with ==backups==
 
----
-layout: default
----
+::right::
 
-# Pragmatic storage pattern
 
 1. In‑cluster replicated storage
     - Back most PVCs with a replicated storage solution
@@ -757,6 +823,11 @@ layout: default
     - Consider:
       - DB‑native replication + backups
       - Possibly dedicated infrastructure
+
+<!-- 
+
+
+ -->
 
 ---
 layout: default
@@ -1144,14 +1215,15 @@ layout: center
 # Summary & decision framework
 
 ---
-layout: two-cols-header
+layout: two-cols-title
 ---
 
+::title::
+
+# Cheat sheet
+
+
 ::left::
-
-# Pragmatic self‑hosted stack (cheat sheet)
-
-
 **Infra & OS**
 
 - Container‑only nodes:
@@ -1185,7 +1257,7 @@ layout: two-cols-header
 
 - RBAC & Pod Security Standards
 - Network policies (default deny)
-- External secrets (Vault, SOPS, …)
+- External secrets (Vault, SOPS, SealedSecrets, ...)
 - Image scanning in CI
 
 **Observability & GitOps**
@@ -1196,15 +1268,45 @@ layout: two-cols-header
 - GitOps:
   - Argo CD or Flux
 
+
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# Honest trade‑offs
+::title::
+
+# Pragmatic self-hosted stack & trade-offs
+
+::left::
+
+## Pragmatic self‑hosted stack (cheat sheet)
+
+**Infra & OS**
+
+- Container‑only nodes:
+  - ==Fedora CoreOS / Talos / similar==
+- Mixed use:
+  - Ubuntu LTS / Debian / RHEL
+
+**Kubernetes**
+
+- ==Distro: rke2==
+- Small edge clusters: k3s
+
+**Networking**
+
+- ==CNI: Cilium==
+- Ingress: NGINX or Traefik
+- TLS: `cert-manager`
+- Bare‑metal LB: MetalLB / kube‑vip
+
+::right::
+
+## Honest trade‑offs
 
 **Advantages of self‑hosting**
 
-- Full control over:
+- ==Full control== over:
   - k8s version and config
   - Networking & storage stack
   - Security tooling
@@ -1213,13 +1315,14 @@ layout: default
 
 **Costs**
 
-- Operational burden:
+- ==Operational burden==:
   - Upgrades, DR, security patches
   - On‑call for control plane issues
 - Complexity:
   - Networking, storage, backup, security all in your lap
 - Human cost:
   - Need infra expertise and time, continuously
+
 
 ---
 layout: default
@@ -1240,16 +1343,3 @@ layout: default
     - Tested backups and DR
 
 Self‑hosting is powerful, but should be a conscious choice.
-
----
-layout: center
----
-
-# Q & A
-
-Happy to go deeper into:
-
-- Storage and backups
-- GitOps patterns
-- Security hardening
-- Specific tools (rke2, Cilium, Longhorn, …)
