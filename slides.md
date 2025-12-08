@@ -35,22 +35,23 @@ layout: default
 
 # What will we do today?
 
-- **Quick k8s refresher** - What does kubernetes solve for us?
-- **Why k8s?** - When should we use it and how?
-- **Managed k8s vs. self-hosting** - Why is one harder than the other? Should we even self-host?
-- **Blueprint for self hosting** - Pragmatic solutions that get the job done
-- **GitOps "deepdive"** - Why and how to use pull-based config
+- ==Quick k8s refresher== - What does kubernetes solve for us?
+- ==Why k8s?== - When should we use it and how?
+- ==Managed k8s vs. self-hosting== - Why is one harder than the other? Should we even self-host?
+- ==Blueprint for self hosting== - Pragmatic solutions that get the job done
+- ==GitOps "deepdive"== - Why and how to use pull-based config
+- ... and we'll set up our **own cluster** too!
 
 <br>
 <br>
 <br>
 
 <v-click>
-... and <b>not </b> do! 
+... and <mark class='red'>not</mark> do! 
 
-- not a k8s 101
-- not a full CNCF landscape tour
-- not a security / DR deep dive
+- not a k8s 101!
+- not a full CNCF landscape tour!
+- not a security / desaster recovery deep dive!
 
 </v-click>
 
@@ -61,6 +62,7 @@ layout: default
 - .. a clear understanding when it is viable to self-host k8s
 - .. a list of standard go-to tools 
 - .. the urge to use GitOps right away
+- .. some hands on experience with that!
 
 </StickyNote>
 
@@ -213,44 +215,44 @@ image: img/cncf.png
 -->
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# What are we actually trying to achieve?
+::title::
 
-We want to run workloads that are:
+# What do we want - and at what cost?
+
+::left::
+
+### Requirements for our workloads
 
 - Stable & resilient
   - Survive node failures
   - Roll out updates safely
 - Secure
-  - Reasonable default posture
+  - Reasonable defaults
   - Least privilege, isolation, secrets management
 - Operationally viable
   - On‑call should be bearable
   - Limited human time for maintenance
   - New people can be productive quickly
 
----
-layout: default
----
 
-# Constraints drive design
+::right::
 
-A "reliable system" must name its constraints:
+### Constraints drive design!
 
-- SLO / availability target
+- ==Service Level Objective (SLO)== / availability target
   - 99% (3.65 days / year) vs 99.99% (~52 mins / year)
   - Higher SLO → more complexity, more infra, more process
-- RPO / RTO
-  - How much data loss is acceptable?
-  - How quickly must we recover?
-- Team & skills
+- ==Revovery== from failures
+  - How much data loss is acceptable? (RPO)
+  - How quickly must we recover? (RPT)
+- ==Team & skills==
   - How many people can realistically work on infra?
-- Regulatory / environment
+- ==Regulatory== / environment
   - Cloud OK? On‑prem / air‑gapped? Sovereign cloud?
 
-We'll see these again when deciding managed vs self‑hosted.
 
 
 
@@ -382,48 +384,37 @@ layout: two-cols-title
 layout: two-cols-title
 ---
 
-::left::
-# When you probably should self‑host
+::title::
 
+# Self-host - yay or nay?
+
+::left::
+
+### You should probably self-host if...
 
 Self‑host is reasonable if:
 
-- You must run:
-  - On‑prem
-  - Air‑gapped
-  - Sovereign cloud w/o managed k8s
-- You need customization:
+- You must run on‑prem,  air‑gapped or have other sovereignity constraints <span class='small'>(certification issues, data privacy, ..)</span>
+- You need customization 
   - Special networking needs
   - Tight control over k8s internals
 
-::right::
-
 And you have:
 
-- Team with infra experience
+- Team with ==infra experience==
 - Capacity to:
   - Design & maintain a cluster stack
-  - Implement and *test* DR
+  - Implement and *test* desaster reovery
   - Handle security patches, upgrades
 
-Otherwise you risk a brittle, snowflake cluster.
+::right::
 
----
-layout: two-cols-title
----
-
-::left::
-# When you probably should not self‑host
-
-
-Think twice about self‑hosting if:
+###  When you probably should not self‑host
 
 - You're already on AWS/Azure/GCP
 - You have a small team
 - You don't have hard regulatory / locality constraints
-- Your SLO is modest (e.g. 99%-99.9%)
-
-::right::
+- Your SLO is modest (e.g. 99%-99.9%) ==TODO==
 
 Typical symptoms:
 
@@ -432,7 +423,8 @@ Typical symptoms:
 - "We don't have time for DR tests"
 
 > If you don't have strong reasons *for* self‑hosting,
-> your default should be managed k8s.
+> your default should probably be managed k8s.
+
 
 ---
 layout: section
@@ -441,8 +433,17 @@ color: light
 
 # From decision to reality
 
-We assume we have good reasons to self‑host.  
+We assume we have ==good reasons to self‑host==  
 What does life with a self‑hosted cluster look like?
+
+
+<StickyNote  color="green-light" textAlign="center" width="180px"  v-drag="[632,157,222,193,5]" v-click>
+ 
+ <br>
+ 
+ ## ..and how can we build it now?
+
+ </StickyNote>
 
 ---
 layout: default
@@ -517,10 +518,11 @@ layout: default
 layout: default
 ---
 
-# How to make life easier?
+# The laundry list 🧺🧼👕
 
-We need to solve, at minimum:
+The minimal ==ingredients== for a self-managed cluster:
 
+- Hardware / VMs
 - Operating system (OS)
 - Kubernetes distro / flavor
 - Cluster formation & lifecycle
@@ -530,7 +532,14 @@ We need to solve, at minimum:
 - Security
 - Observability
 
-**We’ll look at pragmatic, opinionated OSS choices.**
+
+<StickyNote text-align=center color='emerald-light' v-drag="[255,311,162,145,-6]">
+
+## OSS ftw!
+
+There's excellent **open-source** tooling for all of this!
+
+</StickyNote>
 
 ---
 layout: two-cols-title
