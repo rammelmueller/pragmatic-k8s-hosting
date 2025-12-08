@@ -8,19 +8,21 @@ drawings:
   persist: false
 mdc: true
 colorSchema: light
-color: light
+color: blue
 
 layout: cover
 transition: slide-left
 ---
 
-# Self-hosting k8s
+# Self-hosting `k8s`
 
 <div style="margin-top: -2rem">
 
-The ==pragmatic== way
+The _pragmatic_ way
 
 </div>
+
+<img src="/img/k8s.png"  v-drag="[412,135,687,668]">
 
 <img src="/img/TNG-Logo_groß_mitSchutzzone_weiß.svg"  v-drag="[745,-53,215,186]">
 
@@ -737,6 +739,36 @@ For **larger** clusters consider:
 layout: two-cols-title
 ---
 
+::title:: 
+
+# Let's set up a cluster!
+
+:: left::
+
+As our first step, we'll set up our k8s cluster:
+- We assume that the machines are provisioned and an OS is installed
+- We can reach them via SSH 
+
+### Target state
+- Use `rke2` as our distro
+- One master node, five worker nodes <br><span class='small'>(better would be a highly available setup - but we'll have to save some time)</span>
+
+### Steps
+1. Set up the ==server== node (also often referred to as "master")
+2. Connect five ==agents== (or "worker")
+3. Make sure all nodes join properly and are in `Ready` state
+
+
+
+::note::
+\[1\] [rke2 installation guide](https://docs.rke2.io/install/quickstart)<br>
+\[2\] [rke2 high-availability setup](https://docs.rke2.io/install/ha)
+
+
+---
+layout: two-cols-title
+---
+
 ::title::
 
 # Networking - internal and external
@@ -786,6 +818,58 @@ Most important: Pick one and ==avoid switching later==
 layout: two-cols-title
 ---
 
+::title:: 
+
+# Step 2 - set up proper networking!
+
+:: left::
+
+### In-cluster: Cilium 
+
+- Adapt the rke2 config file - Cilium is supported out-of-the-box!
+  ``` yaml
+  # /etc/rancher/rke2/config.yaml
+  cni: cilium
+  ```
+
+- Restart the rke2 service
+  ``` bash
+  systemctl restart rke2-server
+  ```
+
+- Add encryption via a ==HelmChartConfig==
+
+::right::
+### External: Configure Cilium 
+
+- rke2 brings it's own <mark class='green'>Ingress Controller</mark> - **nothing to do here!**
+- Need to add support for external IP addresses for ==LoadBalancer== services
+- Requires two resources:
+  - ==CiliumLoadBalancerIPPool== -> Which IPs are available?
+  ``` yaml
+  apiVersion: "cilium.io/v2"
+  kind: CiliumLoadBalancerIPPool
+  metadata:
+    name: "blue-pool"
+  spec:
+    blocks:
+    - cidr: "10.0.10.0/24"
+  ```
+  - ==CiliumL2AnnouncementPolicy== -> Make the IPs known!
+- [Simply apply these resources](https://docs.cilium.io/en/latest/network/lb-ipam/) and we're done
+
+ 
+
+::note::
+\[1\] rke2 [networking](https://docs.rke2.io/networking/basic_network_options) guide<br>
+\[2\] Notable alternative for external is [MetalLB](https://metallb.io/)
+
+
+
+---
+layout: two-cols-title
+---
+
 ::title::
 # Storage: what problem are we solving?
 
@@ -808,7 +892,6 @@ We need a solid approach with ==backups==
 
 ::right::
 
-
 1. In‑cluster replicated storage
     - Back most PVCs with a replicated storage solution
     - Works well for:
@@ -824,14 +907,11 @@ We need a solid approach with ==backups==
       - DB‑native replication + backups
       - Possibly dedicated infrastructure
 
-<!-- 
-
-
- -->
-
 ---
 layout: default
 ---
+
+<img src="/img/longhorn.png" v-drag="[598,104,332,69]">
 
 # Tool of choice: Longhorn
 
@@ -860,6 +940,47 @@ Caveats:
   - Monitoring
   - Backup strategy
   - Capacity planning
+
+
+---
+layout: two-cols-title
+---
+
+::title:: 
+
+# Step 3 - storage with Longhorn
+
+:: left::
+
+### Install Longhorn via the helm chart
+
+- Add the repo
+  ``` bash
+  helm repo add longhorn https://charts.longhorn.io
+  ```
+- Install the chart
+  ``` bash
+  helm install longhorn longhorn/longhorn \
+    --namespace longhorn-system \
+    --create-namespace \
+    --version 1.10.1
+  ```
+- Verify the installation
+  ``` bash
+  kubectl -n longhorn-system get pod
+  ```
+- Also verify by checking out the ==Longhorn UI==
+
+
+
+<StickyNote  color="amber-light" textAlign="left" width="180px"  v-drag="[621,155,253,232,5]" v-click=1>
+ 
+ ## `PersitentVolumeClaims` now are no longer pending - they will be satisfied right away with a freshly created `PersistentVolume`
+
+ </StickyNote>
+
+::note::
+\[1\] [longhorn](https://longhorn.io/docs/1.10.1/deploy/install/install-with-helm/) setup guide
 
 ---
 layout: default

@@ -1,11 +1,2 @@
-# Welcome to [Slidev](https://github.com/slidevjs/slidev)!
-
-To start the slide show:
-
-- `pnpm install`
-- `pnpm dev`
-- visit <http://localhost:3030>
-
-Edit the [slides.md](./slides.md) to see the changes.
-
-Learn more about Slidev at the [documentation](https://sli.dev/).
+# Self-hosting k8s - the pragmatic way
+These are lecture notes for self-hosting k8s (with bare-metal or else) based on [slidev](sli.dev) and my own fork of the [neversink theme](https://github.com/gureckis/slidev-theme-neversink).
