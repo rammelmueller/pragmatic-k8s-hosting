@@ -1,5 +1,5 @@
 ---
-theme: ../slidev-theme-neversink/
+theme: ../../slidev-theme-neversink/
 fonts:
   sans: Roboto
   mono: Roboto Mono
@@ -234,8 +234,8 @@ layout: two-cols-title
   - Least privilege, isolation, secrets management
 - Operationally viable
   - On‑call should be bearable
-  - Limited human time for maintenance
-  - New people can be productive quickly
+  - Possibility to react (fail) fast
+  - "Standardized setup" -> Onboard people to be productive quickly
 
 
 ::right::
@@ -262,123 +262,40 @@ layout: two-cols-title
 
 ::title::
 
-# Managed k8s - the `easy` way
+# Managed k8s - the "easy" way
 
 ::left::
 
-Go to your favourite cloud vendor and click:
-  - AWS EKS, Azure AKS, GCP GKE
-  - Or regional providers: Stackit, Hetzner, …
+Go to your favourite ==cloud vendor== and click (or use IaC tools)
+  - AWS EKS, Azure AKS, GCP GKE, …
+  - 🇪🇺 providers: Stackit, Hetzner, …
 
 
-What you get:
+What we get:
 - Managed control plane:
   - API server, etcd, scheduler, controllers
-  - Patching, upgrades, availability
-- Integration with cloud:
-  - Load balancers, disks, IAM
+  - High availability
+  - Patching + upgrades
+- Integration with cloud
+  - Load balancers, storage, IAM
+  - Logging and monitoring
+  - Backups
 
 ::right::
-You still own some aspects <span class='small'> (depending on the vendor)</span>
 
-- Node sizing, OS patching (often)
-- Networking layout
+You still have to take care of some aspects <span class='small'> (depending on the vendor)</span>
+- Manage worker nodes (sizing, scaling)
 - Security configuration
-- Workload design
-
----
-layout: two-cols-title
----
-
-# Managed k8s - cost perspective (qualitative)
-
-::left::
+- Workload delivery
 
 
-What you pay for:
 
-- Control plane time (cluster fee)
-- Worker nodes (VMs)
-- Data transfer, storage, LB, etc.
+<StickyNote v-drag="[515,284,353,177,-5]" text-align=center color="emerald-light">
+<br>
 
-What you save:
+### Essentially we get a k8s API endpoint that we can use to deploy our applications - all inclusive, hassle-free
 
-- No etcd / control plane ops
-- Less effort on upgrades & HA
-- Fewer "oh no, the control plane is down at 2am" incidents
-
-::right::
-
-Total cost of ownership:
-
-- \(\text{Cloud bill} + \text{Infra engineer time}\)
-- One engineer day / month can be more expensive than a small control plane fee
-
-**Rule of thumb**
-
-- If you're already in a major cloud and don't have special constraints, managed k8s is usually cheaper overall.
-
----
-layout: default
----
-
-# What does "self‑managed k8s" mean?
-
-Self‑management can mean:
-
-- On VMs in the cloud
-- On VMs you operate yourself
-- On bare‑metal hardware
-
-What unites them:
-
-- You own the control plane lifecycle
-  (install, upgrade, backup, restore)
-- You own node lifecycle
-- You build (some of) the "cloud magic" yourself:
-  - Load balancing
-  - Storage
-  - Networking
-  - Observability
-  - Security policies & enforcement
-
----
-layout: two-cols-title
----
-
-# Managed vs. self‑managed 
-
-::left::
-
-**Managed k8s**
-
-
-- Control plane:
-  - Operated by provider
-  - SLAs, automated upgrades
-- Integrations:
-  - Cloud LBs, disks, IAM
-- Effort:
-  - Lower baseline ops
-- Downsides:
-  - Vendor coupling
-  - Less deep control
-  - Limited in air‑gapped / special envs
-
-::right::
-
-**Self‑managed**
-
-- Control plane:
-  - You build + operate it
-- Integrations:
-  - BYO networking & storage stack
-- Effort:
-  - Higher ops burden
-  - Need more expertise
-- Upsides:
-  - Full control
-  - Works on‑prem / sovereign / air‑gapped
+</StickyNote>
 
 ---
 layout: two-cols-title
@@ -386,24 +303,66 @@ layout: two-cols-title
 
 ::title::
 
-# Self-host - yay or nay?
+# Option 2 - self-manage k8s
+
+::left::
+
+### Self‑management can mean ...
+- ... VMs in the cloud
+- ... VMs you operate yourself
+- ... bare‑metal hardware
+
+
+### What unites them
+- You own the control plane lifecycle
+  (install, upgrade, backup, restore)
+- You own node lifecycle
+- You build (some of) the ==cloud magic== yourself:
+  - Load balancing
+  - Storage
+  - Networking
+  - Observability
+  - Security policies & enforcement
+  - Public key infrastructure (PKI)
+
+
+::right::
+
+### Benefits
+
+- Ability to run under ==all conditions==
+  - highly regulated environments
+  - compliance / privacy concerns
+  - edge
+- Full control over
+  - infrastructure: allows full customization
+  - data: what is stored where?
+- **No vendor lock-in!**
+- Side bonus: Build capabilities that are important when the <mark class='red'>incidents</mark> happen  <span class='small'> (and they will most definitely happen!)</span>
+
+
+---
+layout: two-cols-title
+---
+
+::title::
+
+# Self-host - yay or nay?  <span class='small'> (no one-size-fits-all answer)</span>
 
 ::left::
 
 ### You should probably self-host if...
 
-Self‑host is reasonable if:
 
-- You must run on‑prem,  air‑gapped or have other sovereignity constraints <span class='small'>(certification issues, data privacy, ..)</span>
+- You must run on‑prem,  air‑gapped or have other sovereignity constraints <span class='small'>(certification issues, data privacy, ...)</span>
 - You need customization 
-  - Special networking needs
-  - Tight control over k8s internals
+  - Special networking needs  <span class='small'> (high specialized interconnect for GPU nodes, ... )</span>
+  - Tight control over k8s internals  <span class='small'> (custom scheduling, admission controllers, special etcd setup, ...)</span>
 
 And you have:
 
-- Team with ==infra experience==
-- Capacity to:
-  - Design & maintain a cluster stack
+- Team with ==infra experience== and capacity to
+  - Design and maintain a cluster stack
   - Implement and *test* desaster reovery
   - Handle security patches, upgrades
 
@@ -414,7 +373,7 @@ And you have:
 - You're already on AWS/Azure/GCP
 - You have a small team
 - You don't have hard regulatory / locality constraints
-- Your SLO is modest (e.g. 99%-99.9%) ==TODO==
+- You need a lot of scaling. Quickly.
 
 Typical symptoms:
 
@@ -518,8 +477,7 @@ layout: default
 layout: default
 ---
 
-# The laundry list 🧺🧼👕
-
+# The laundry list 🧺
 The minimal ==ingredients== for a self-managed cluster:
 
 - Hardware / VMs
@@ -533,7 +491,10 @@ The minimal ==ingredients== for a self-managed cluster:
 - Observability
 
 
-<StickyNote text-align=center color='emerald-light' v-drag="[255,311,162,145,-6]">
+<img src="/img/laundry-list.svg" v-drag="[454,159,448,269]" />
+
+<StickyNote text-align=center color='emerald-light' v-drag="[263,339,227,127,2]" v-click="1">
+
 
 ## OSS ftw!
 
@@ -882,55 +843,86 @@ layout: two-cols-title
 ::title::
 # Storage: what problem are we solving?
 
-
 ::left::
 
 - Caches / temp data for some services <span class='small'>(not critical)</span>
-- Actual state:
+- <mark class='red'>Actual state</mark>
   - Databases
   - Message queues
   - User‑uploaded data
 
+<mark class='green'>Try to avoid stat in the cluster if possible!</mark>
+
 **Challenges**
-
+- I want `150GB` with fast access now. And replicated.
 - Storage is ==high risk, low perceived reward==
-- Everyone expects it to “just work”
-- When it doesn’t, the fallout is huge
+  - Everyone expects it to “just work”
+  - When it doesn’t, the fallout is huge
 
-We need a solid approach with ==backups==
+We need a solid approach with ==backups== (and restore...)
 
 ::right::
+<div v-click>
 
-1. In‑cluster replicated storage
-    - Back most PVCs with a replicated storage solution
-    - Works well for:
-      - Stateful apps that can tolerate some downtime
-      - Smaller clusters
+##### Local storage on nodes
+- Simply use the disks of the nodes
+- Does not scale well, sometimes enough though for small clusters
 
-2. Off‑cluster backups
-    - Regular backups of volumes or DBs
-    - Target: object storage (S3, compatible, etc.)
+<div style="margin-bottom: 1.5rem"/>
 
-3. Critical databases
-    - Consider:
-      - DB‑native replication + backups
-      - Possibly dedicated infrastructure
+##### In-cluster replicated storage
+- Distributed storage system built from node disks
+- Good for general purpose PVs
+
+<div style="margin-bottom: 1.5rem"/>
+
+##### External storage system
+- NFS / SAN / NAS solutions
+- More "enterprise style" <span class='small'>(probably overkill to set upfor small/medium setups)</span>
+
+<div style="margin-bottom: 1.5rem"/>
+
+##### State out of the cluster
+- Especially for DBs it is worth considering <span class='small'>(or a dedicated DB cluster)</span>
+- Use object store (S3) wherever possible  <span class='small'>(logging and metrics for instance)</span>
+
+
+</div>
+<!-- 
+
+self-hosted:
+- A storage system (local disks, NFS, SAN, Ceph, etc.).
+- The matching CSI driver and/or dynamic provisioner.
+- A StorageClass that uses that driver.
+
+flow:
+- Developer creates a PVC: “I need 10Gi, StorageClass=fast-ssd”.
+- Kubernetes asks the CSI driver for fast-ssd to provision a volume.
+- The driver creates the volume in your storage system
+- When a pod using that PVC is scheduled, the CSI driver:
+  - Attaches / mounts the volume on the node.
+  - Kubernetes mounts it into the pod.
+
+ -->
+
+
 
 ---
 layout: default
 ---
 
-<img src="/img/longhorn.png" v-drag="[598,104,332,69]">
+<img src="/img/longhorn.png" v-drag="[565,373,332,69]">
 
 # Tool of choice: Longhorn
 
-**Longhorn**
-
-- CNCF project for distributed block storage on k8s
-- Provides:
-  - A CSI driver
+### CNCF project for ==distributed block storage== on k8s
+Provides:
+  - A [CSI](https://github.com/container-storage-interface/spec/blob/master/spec.md) driver
   - Replication across nodes
   - Snapshots, backup/restore
+
+
+<div style="margin-bottom: 1.5rem"/>
 
 How it fits:
 
@@ -938,18 +930,13 @@ How it fits:
 - Longhorn → manages volumes replicated across nodes
 - Backup → to external object storage
 
+
+<div style="margin-bottom: 1.5rem"/>
+
 Why it's pragmatic:
 
 - Easy to install and operate (relative to alternatives)
 - Works well for small/medium self‑hosted clusters
-
-Caveats:
-
-- Not a silver bullet; still needs:
-  - Monitoring
-  - Backup strategy
-  - Capacity planning
-
 
 ---
 layout: two-cols-title
@@ -992,164 +979,277 @@ layout: two-cols-title
 \[1\] [longhorn](https://longhorn.io/docs/1.10.1/deploy/install/install-with-helm/) setup guide
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# Backups & recovery: surfaces
+::title::
 
-We need to back up:
+# Backups & recovery ==aka "hope is not a strategy!"==
+
+::left::
+
+### What do we need to backup?
 
 - **etcd**
   - Cluster state
   - API objects (Deployments, Services, etc.)
+  - <mark class='red'> Secrets </mark>
 - **Persistent volumes**
   - Application data on PVs
-- **Databases / external services**
-  - Often best via DB‑native tools
+- **Databases**
+- **Message Queues**
 
-Principle:
 
-> You don’t have a cluster until you have a tested **restore** procedure.
+<StickyNote color='emerald-light' v-drag="[51,390,317,80]" text-align=center>
 
----
-layout: default
----
+#### We don't have to backup configuration if we stick to CaC / Gitops
 
-# Backups & recovery: tools and patterns
+</StickyNote>
+
+
+::right::
+
+### Tools and patterns
 
 - **etcd**
-  - Regular snapshots
-  - Store off‑cluster
+  - Regular snapshots <span class='small'>(rke2 default: every `12h`)</span>
+  - Store <mark class='red'>off‑cluster</mark>  <span class='small'>(e.g., object store)</span>
   - Practice restoring to a new control plane
 
 - **PVCs**
-  - Tools like Velero for backups & restores
-  - Or CSI snapshots + backup pipeline
+  - Essentially a [CSI snapshots](https://kubernetes.io/docs/concepts/storage/volume-snapshots/) + backup pipeline
+  - Velero implements this for backups & restores
+  - Longhorn also has backup mechanism
 
 - **Databases**
-  - Use DB‑native backup tools (pg_dump, WAL archiving, etc.)
+  - ==Use DB‑native backup tools==  <span class='small'>(`pg_dump`, WAL archiving, operator capabilities, ...)</span>
   - Store backups off‑cluster
 
-> “Hope is not a strategy.”
+
+::note::
+\[1\] Example with [Longhorn + Velero](https://longhorn.io/blog/20250902-k8s-backup-solutions-and-longhorn/)
 
 ---
-layout: default
+layout: two-cols-title
+columns: is-7
 ---
 
-# Security: a continuous concern
+::title::
 
-Security is not a single setup step; it's a mindset.
+# Security - a `continuous` concern
 
-k8s helps with:
+::left::
 
+### Security is not a single setup step - ==it's a mindset==
+
+Built-in k8s have functionality to help us here:
+- Service accounts & RBAC
 - Isolation primitives (namespaces, network policies)
 - Pod security controls
-- Service accounts & RBAC
 - Integrating external identity & secret backends
 
-We’ll look at a baseline security checklist for self‑hosting.
 
----
-layout: default
----
+<StickyNote color="red-light" v-drag="[54,347,436,126,-2]">
+<br>
 
-# Baseline security checklist
+### Security is a `huge` topic (lecture on its own) - this is merely a list to get you started!
 
-- **RBAC**
-  - Least privilege for users & service accounts
+</StickyNote>
+
+::right::
+
+### Baseline security checklist
+
+- **Cluster access**: Avoid the `cluster-admin` kubeconfig, ideally OIDC with an *external* identity provider
+- **RBAC**: Least privilege for users & service accounts
 - **Pod Security**
-  - Pod Security Standards (or admission policies)
-  - Drop unnecessary capabilities
-  - `runAsNonRoot`, no privilege escalation, seccomp, AppArmor
+  - [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/) (admission policies)
+  - Enforce things like `runAsNonRoot`, no privilege escalation, seccomp, AppArmor
 - **Network policies**
-  - Default deny
-  - Explicitly allow required traffic
-- **Secrets**
-  - External secret stores over plaintext k8s secrets:
-    - Vault, cloud KMS + External Secrets Operator
-    - SOPS‑encrypted manifests
+  - Default deny, explicitly allow *only*  required traffic
+- **Secrets**: External secret stores ([OpenBao](https://openbao.org/) + External Secrets Operator), SOPS
+- **Encrypted backups**: Often forgotten / leaked
 - **Image supply chain**
-  - Image scanning in CI (Trivy, Grype, …)
-  - Optionally: signing (cosign), SBOMs
+  - Image + dependency scanning in CI (Trivy, …)
 
-Use CIS benchmarks as a guide, not as dogma.
+Use CIS benchmarks as a ==guide==, not as dogma.
+
+::note::
+\[1\] Running CIS benchmark with [kube-bench](https://www.cncf.io/blog/2025/04/08/kubernetes-hardening-made-easy-running-cis-benchmarks-with-kube-bench/)
 
 ---
-layout: default
+layout: two-cols-title
+columns: is-7
 ---
+
+::title::
+
+# Security - beyond the basics
+
+::left::
+
+- **Dependencies:** Image signing (cosign) + SBOMs
+- **Strict admission policies**
+  - Consider using `Restricted` Pod security standard
+  - [Kyverno](https://kyverno.io/) is a great policy engine
+- **Runtime Enforcement / full container security lifecycle**
+  - For example scanning of running processes inside of containers
+  - More on the enterprise side, requires effort to do right (and useful)
+  - Tools: Tetragon, NeuVector
+
+
+<div style="margin-bottom: 1.5rem"/>
+
+### Especially for on-premise clusters
+- **Network setup** can become very complex!
+  - Proper segmentation (VLAN, routing zones)
+  - OOB network setup
+  - Firewall settings -> Often done <mark class='red'>manually</mark> by a separate team
+
+<StickyNote color="amber-light" v-drag="[633,180,257,216,2]">
+<br>
+
+### Those things bring value - but also require `operational effort`!
+
+Recommendation: Explore as you go, see what fits.
+
+</StickyNote>
+
+---
+layout: two-cols-title
+---
+
+::title::
 
 # Observability (bonus, but crucial)
 
-Without observability, you’re flying blind.
+::left::
 
-Minimal stack:
-
-- **Metrics**
+### Metrics
   - Prometheus
-  - kube‑prometheus‑stack (includes node‑exporter, kube‑state‑metrics)
-- **Dashboards**
+  - For multi-tenancy: Thanos, Mimir
+  - Good starting point: [kube‑prometheus‑stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) <br><span class='small'>(includes node‑exporter, kube‑state‑metrics)</span>
+### Logs
+  - Loki 
+  - OpenSearch
+
+### Traces
+- Tempo
+- Jaeger
+
+::right::
+
+### Dashboards
   - Grafana
-- **Logs**
-  - Fluent Bit / vector → Loki or Elasticsearch/OpenSearch
-- **Alerts**
+
+### Alerts
   - Alertmanager
   - Integrate with Slack, email, PagerDuty, …
 
-You can start simple, but you do need *something* here from Day 1.
+
+<StickyNote v-drag="[550,341,271,152,6]">
+
+<br>
+
+### We can start simple, but we do need *something* here from day 1
+
+</StickyNote>
 
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# Multi‑cluster (bonus)
 
-Often you eventually need multiple clusters:
+::title::
+
+# Multi‑cluster (bonus) 
+
+<img src="/img/k8s.png"  v-drag="[501,18,55,54]" />
+
+<img src="/img/k8s.png"  v-drag="[563,17,55,54]" />
+
+<img src="/img/k8s.png"  v-drag="[626,16,55,54]" />
+
+<img src="/img/k8s.png"  v-drag="[687,16,55,54]" />
+
+
+::left::
+
+Often you eventually need ==multiple clusters== 
 
 - Separation by:
-  - Environment (dev / stage / prod)
+  - Environment (`dev` / `stage` / `prod`)
   - Region / site
   - Tenant / business unit
+  - stateful vs. non-stateful
+    <br><span class='small'>(e.g., separate DB cluster)</span>
+  - Central control plane
 
-Challenges:
 
-- Consistent provisioning across clusters
-- Managing shared components and policies
+<div style="margin-bottom: 2rem"/>
+
+
+### Challenges
+
+- Consistent provisioning ==across clusters==
+- Managing shared components and policies 
+  <br><span class='small'>(while not repeating ourselves too much)</span>
 - Federated observability and identity
 
-Tools:
+::right::
 
-- rke2 + Rancher
-- Cluster API
-- GitOps orchestrating multiple clusters
+### Tools & patterns
 
-We’ll mostly focus on the **single cluster** picture today.
+- [Cluster API](https://cluster-api.sigs.k8s.io/) (k8s "native")
+- Self-managed control plane tools 
+  <span class='small'>(Rancher, Openshift, ...)</span>
+- Cluster-managers, notably [Gardener](https://gardener.cloud/)
+- GitOps orchestrating multiple clusters "by hand"
+- Control-plane managers run control planes as Pods
+  <span class='small'>(e.g., Kamaji)</span>
+
 
 ---
-layout: center
+layout: section
+color: light
 ---
 
 # GitOps
 
 Making k8s operations and deployments
-boring, repeatable and auditable
+==boring, repeatable and auditable==
 
 ---
-layout: default
+layout: two-cols-title
+columns: is-5
 ---
+
+::title::
 
 # Control loops & reconciliation
 
-Core k8s idea:
+::left::
 
-- You declare **desired state** (YAML, manifests, CRs)
-- Controllers continuously reconcile:
+### Core k8s idea
+
+- You declare **desired state** <span class='small'>(YAML, manifests, charts, ...)</span>
+- ==Controllers== continuously reconcile:
   - Compare desired vs actual
-  - Take actions to converge actual → desired
+  - Take actions to converge <mark class='red'>actual</mark> → <mark class='green'>desired</mark>
+- Example: `Deployment`
+  - Replicaset controller watches desired number of pods
+  - If the number does not match what we ordered: create a new pod
 
-GitOps extends this idea:
+
+<div style="margin-bottom: 2rem"/>
+
+### GitOps extends this idea
 
 - Desired state lives in **Git**
 - A controller reconciles **cluster state** to what’s in Git
+
+
+<img src="/img/reconciliation.png" v-drag="[411,128,533,355]"/>
 
 ---
 layout: default
@@ -1157,100 +1257,40 @@ layout: default
 
 # What is GitOps?
 
-- **Git as single source of truth** for:
-  - Cluster configuration (CNI, ingress, certs, observability)
+<div style="margin-bottom: 5rem"/>
+
+### Git as `single` source of truth
+  - Cluster configuration  <span class='small'>(CNI, ingress, certs, observability)</span>
   - Security policies
   - Application deployments
-- **Automated reconciliation**
-  - A controller monitors Git
+
+<div style="margin-bottom: 2rem"/>
+
+### Automatic reconciliation
+  - A controller monitors the git repo
   - Applies changes to the cluster
   - Continuously keeps cluster in sync
 
-Why it’s useful:
+<div style="margin-bottom: 2rem"/>
 
+<img src="/img/gitops.svg" v-drag="[487,59,337,405]"/>
+
+
+::note::
+\[1\] https://www.gitops.tech/
+
+<!--
+Main goals:
+- consistent, repeatable deployments
+- automated deployments and rollbacks
+- Apply devops principles:version contol, ci/cd, infrastructure automation
+
+Why it’s useful:
 - Every change is a PR (reviewable, auditable)
 - Rollback = `git revert`
 - Reproducible environments
 - Less “kubectl from my laptop at 2am”
 
----
-layout: default
----
-
-# Why GitOps from day 0?
-
-Common misconception:
-
-> “We’ll just add GitOps later.”
-
-Problems with that:
-
-- You accumulate **snowflake state** in the cluster
-- Migration to GitOps later:
-  - Means reconciling state drift
-  - Is painful and time‑consuming
-
-Better approach:
-
-- Start **simple** with GitOps:
-  - Maybe 1 repo, minimal patterns
-- Grow patterns as you need them
-
----
-layout: default
----
-
-# GitOps tools
-
-Two dominant options:
-
-- **Argo CD**
-  - App‑centric
-  - Great UI and visualization
-  - Supports “app of apps” pattern
-- **Flux**
-  - Git‑native feel
-  - CRD‑driven
-  - Lightweight, easy to integrate into Git workflows
-
-Both:
-
-- Continuously reconcile from Git to cluster
-- Support Helm, Kustomize, raw manifests
-- Are CNCF projects, battle‑tested
-
-Pick one, don’t try to run both.
-
----
-layout: default
----
-
-# Typical GitOps repo structure
-
-One possible pattern (simplified):
-
-- `clusters/`
-  - `prod/`
-  - `staging/`
-  - `dev/`
-- `infrastructure/`
-  - CNI, ingress controller, cert‑manager
-  - Longhorn, monitoring, logging, security policies
-- `apps/`
-  - Individual applications (Helm charts / manifests)
-- `environments/`
-  - Overlays for dev/stage/prod (kustomize or Helm values)
-
-This keeps:
-
-- Infra vs apps clearly separated
-- Environment‑specific differences localized
-
----
-layout: default
----
-
-# How GitOps ties the stack together
 
 Everything we’ve discussed can be **described in Git**:
 
@@ -1267,43 +1307,115 @@ GitOps controller:
 - Applies changes
 - Keeps your cluster in the desired state
 
+
+What is not GitOps?
+- Push from a pipeline when a new commit happens
+
+-->
+
+
+
 ---
-layout: default
+layout: two-cols-title
 ---
 
-# Without GitOps vs with GitOps
+::title::
 
-**Without GitOps**
+# Why GitOps? <span v-click=1 style="font-size: 3rem"> - on day 1?</span>
+
+::left::
+
+- Infrastructure / Config ==as Code==
+- Manage all infrastructure with ==known tools and workflows==
+  <br><span class='small'>(everyone knows git and pull requests)</span>
+- Maintain <mark class='green'>consistency</mark> and avoid <mark class='red'>drift</mark>
+- Full auditability
+- Easy (and reproducible) ==rollbacks==
+  <br><span class='small'>(requires some help from workloads though)</span>
+- Easier / more controled access management
+  <br><span class='small'>(credentials stay in the cluster)</span>
+
+::right::
+
+<div v-click=1>
+
+> “We’ll just add GitOps later.”
+
+
+<div style="margin-bottom: 2rem"/>
+
+
+### Problems with that
+
+- accumulate <mark class='red'>snowflake state</mark> in the cluster
+- migration to GitOps later:
+  - Means reconciling state drift
+  - Is painful and time‑consuming
+
+<div style="margin-bottom: 2rem"/>
+
+### Better approach
+
+- ==Start simple== with GitOps:
+  - Maybe 1 repo, minimal patterns
+- Grow patterns as you need them
+
+</div>
+
+
+---
+layout: two-cols-title
+---
+
+::title::
+
+# Without vs with GitOps
+
+::left::
+
+
+### Without GitOps
 
 - `kubectl apply` from laptops
 - Imperative `helm upgrade` commands
-- Hotfixes nobody documented
-- Hard to reproduce a cluster
-- “Works on prod. Don’t touch it.”
+- Hotfixes nobody ==documented==
+- Hard to ==reproduce== a cluster
+- “Works on prod. Don’t touch it”
 
-**With GitOps**
+<div style="margin-bottom: 1.5rem"/>
 
-- All changes via PRs
+### With GitOps
+
+- All ==changes via PRs==
 - `main` branch defines cluster state
 - Reverts roll back changes
 - Easy to spin up a new cluster with the same config
 - Clear audit trail of *who* changed *what* and *when*
 
----
-layout: default
----
 
-# Example: upgrading ingress controller
+::right::
 
-**Without GitOps**
+
+<div v-click>
+
+### Upgrade Ingress controller without GitOps ...
+
+
+<div style="margin-bottom: 1rem"/>
 
 1. Engineer edits values file locally
 2. Runs `helm upgrade` from laptop
 3. Something breaks
-4. Nobody remembers exactly what changed
+4. Nobody remembers exactly what changed <br><span class='small'>(classic scenario: incomplete-outdated Confluence pages)</span>
 5. Rollback is manual and stressful
 
-**With GitOps**
+
+<div style="margin-bottom: 1.5rem"/>
+
+### ... and with GitOps
+
+
+<div style="margin-bottom: 1rem"/>
 
 1. PR updates ingress Helm chart version in Git
 2. GitOps controller rolls out change
@@ -1313,163 +1425,344 @@ layout: default
    - Controller rolls back
 5. Everything recorded in Git history
 
+</div>
+
+---
+layout: two-cols-title
+---
+
+::title::
+
+# There's really only two GitOps tools
+
+::left::
+
+<div style="margin-bottom: 5rem"/>
+
+
+<img src="/img/argocd.png" v-drag="[41,128,141,65]"/>
+
+  - `Application` as the basic packaging unit
+  - Supports “app of apps” pattern
+  - Great UI and visualization
+  - Sophisticated workflows + further integrations <br>
+    <span class='small'>(Argo Rollouts, Argo Workflows, ...)</span>
+
+<div style="margin-bottom: 5rem"/>
+
+
+<img src="/img/flux.png" v-drag="[50,339,98,51]"/>
+
+  - More "k8s native"  <span class='small'>(k8s controllers, native RBAC, ...)</span>
+  - Lightweight, easy to integrate into Git workflows
+  - No UI, mostly CLI based
+
+
+
+::right::
+### Both tools ...
+- continuously reconcile from Git to cluster
+- support Helm, Kustomize, raw manifests
+- are configured with CRDs
+- are CNCF projects and battle‑tested
+
+
+
+<StickyNote v-drag="[558,329,212,125,6]" color='emerald-light' text-align=center>
+
+<br>
+
+### Pick one, don’t try to run both.
+
+</StickyNote>
+
+---
+layout: two-cols-title
+columns: is-7
+---
+
+::title::
+
+# Install ArgoCD and our first `Application`
+
+::left::
+
+- Add the repo
+  ``` bash
+  helm repo add argo-cd https://argoproj.github.io/argo-helm
+  ```
+- Install the ArgoCD helm chart
+  ``` bash
+  helm upgrade --install \
+    argocd argo/argo-cd \
+    --create-namespace -n argocd 
+  ```
+- Verify the installation
+  ``` bash
+  kubectl -n argocd get pod
+  ```
+- Also verify by checking out the ==ArgoCD UI== (port forward)
+  ```bash
+    kubectl -n argocd get secret \
+      argocd-initial-admin-secret \
+      -o jsonpath="{.data.password}" \
+      | base64 -d
+    ```
+
+::right::
+
+``` yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: first-app
+  namespace: argocd
+spec:
+  project: default
+  destination:
+    namespace: first-app
+    server: https://kubernetes.default.svc
+  source:
+    targetRevision: main
+    path: first-app
+    repoURL: https://github.com/...
+  syncPolicy:
+    automated:s
+      enabled: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+```
+
+::note::
+\[1\] ArgoCD helm chart [reference](https://artifacthub.io/packages/helm/argo/argo-cd)
+
+---
+layout: two-cols-title
+columns: is-5
+---
+
+::title::
+
+# Apps-of-apps pattern
+
+::left::
+
+### One parent app to rule them all!
+
+<div style="margin-bottom: 3rem"/>
+
+```yaml {|13}
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps
+  namespace: argocd
+spec:
+  project: default
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  source:
+    targetRevision: main
+    path: apps
+    repoURL: https://github.com/...
+```
+
+::right::
+
+
+<img src="/img/app-of-apps.svg" v-drag="[441,176,505,225]">
+
+---
+layout: two-cols-title
+columns: is-7
+---
+
+::title:: 
+
+# Typical GitOps repo structure (simple)
+
+::left::
+
+```
+config-repo/
+|- apps/
+   |- app-of-apps.yaml
+   |- infrastructure.yaml
+   |- first-app.yaml
+      |- ...  
+
+|- infrastructue/
+   |- longhorn-values.yaml
+      |- ...  
+
+|- first-app/
+   |- templates/
+      |- deployment.yaml
+      |- service.yaml
+      |- ...  
+   |- values.yaml 
+   |- Chart.yaml
+
+|- ...  
+```
+:: right::
+
+- `apps/`
+  - Individual applications
+
+- `infrastructure/`
+  - CNI, ingress controller, cert‑manager
+  - Longhorn, monitoring, logging, security policies
+
+
+<StickyNote v-drag="[669,307,184,163,3]" color='emerald-light' text-align='center'>
+
+<br>
+
+#### Good for simple setups with or one repo per environment
+
+</StickyNote>
+
+---
+layout: two-cols-title
+columns: is-7
+---
+
+::title:: 
+
+# Typical GitOps repo structure (multi env)
+
+::left::
+
+```
+config-repo/
+|- apps/
+   |- first-app.yaml
+
+|- charts/
+   |- infra/
+   |- first-app/
+
+|- common/
+   |- first-app.yaml
+
+|- envs/
+   |- staging/
+      |- first-app.yaml
+   |- prod/
+      |- first-app.yaml
+      
+```
+
+:: right::
+
+- `charts/`
+  - helm chart definitions to re-use for all envs
+
+- `common/`
+  - common settings for all envs  <span class='small'>(e.g. network policies)</span>
+
+- `envs/`
+  - environment-specific overrides <span class='small'>(e.g. resource allocation, routing)</span>
+
+
+<StickyNote v-drag="[669,321,191,188,3]" color='red-light' text-align='center'>
+
+<br>
+
+## NEVER use `branches` for environment promotion!!!11
+
+</StickyNote>
+
+::note::
+\[1\] [Seriously, don't use branches](https://codefresh.io/blog/stop-using-branches-deploying-different-gitops-environments/)
+
 ---
 layout: default
 ---
 
-# GitOps doesn’t solve everything
 
-GitOps helps with:
+# GitOps is not a silver bullet
 
-- Declarative config
-- Rollouts and rollbacks
-- Auditability and drift detection
+- Environment ==promotion== not directly covered
+  - How to bring config and artifacts from `dev` → `stage` → `prod`
+- Does not directly integrate into developer pipeline
+  - Can lead to slower developer experiences
+    <br><span class='small'>(require extra PR to release rather than simple stage in the pipeline)</span>
+  - Automated ==end-to-end e testing== not straightforward
+- Custom validation required
+  - Preview changes from pipeline not always easy
+- Dynamic enviroments are harder to deal with
+- Secret management 
+  - We cannot simply check in secrets to the repo
+  - (Some say, it just highlights the problems..)
+  - Typical tools: SOPS, SealedSecrets, ...
+- Bootstrapping (and its versioning)
+- Non k8s state can be harder to manage
+  <br><span class='small'>(e.g., DB schema upgrades)</span>
 
-It does **not** magically solve:
+<div style="margin-bottom: 1rem"/>
 
-- Environment promotion semantics
-  - e.g. promoting artifacts from dev → stage → prod
-- Release orchestration across multiple services
-- All security concerns
-
-Complementary tools/patterns:
-
-- Promotion controllers (e.g. Kargo)
-- Workload tagging / artifact versioning
-- Policy as code (OPA/Gatekeeper, Kyverno, …)
 
 ---
-layout: center
+layout: section
+color: light
 ---
 
 # Summary & decision framework
-
----
-layout: two-cols-title
----
-
-::title::
-
-# Cheat sheet
-
-
-::left::
-**Infra & OS**
-
-- Container‑only nodes:
-  - Fedora CoreOS / Talos / similar
-- Mixed use:
-  - Ubuntu LTS / Debian / RHEL
-
-**Kubernetes**
-
-- Distro: rke2
-- Small edge clusters: k3s
-
-**Networking**
-
-- CNI: Cilium
-- Ingress: NGINX or Traefik
-- TLS: `cert-manager`
-- Bare‑metal LB: MetalLB / kube‑vip
-
-::right::
-
-**Storage & backup**
-
-- Storage: Longhorn
-- Backups:
-  - etcd snapshots
-  - Velero (or similar) for PVs
-  - DB‑native backups + off‑cluster storage
-
-**Security**
-
-- RBAC & Pod Security Standards
-- Network policies (default deny)
-- External secrets (Vault, SOPS, SealedSecrets, ...)
-- Image scanning in CI
-
-**Observability & GitOps**
-
-- Observability:
-  - kube‑prometheus‑stack + Grafana
-  - Loki for logs
-- GitOps:
-  - Argo CD or Flux
-
-
----
-layout: two-cols-title
----
-
-::title::
-
-# Pragmatic self-hosted stack & trade-offs
-
-::left::
-
-## Pragmatic self‑hosted stack (cheat sheet)
-
-**Infra & OS**
-
-- Container‑only nodes:
-  - ==Fedora CoreOS / Talos / similar==
-- Mixed use:
-  - Ubuntu LTS / Debian / RHEL
-
-**Kubernetes**
-
-- ==Distro: rke2==
-- Small edge clusters: k3s
-
-**Networking**
-
-- ==CNI: Cilium==
-- Ingress: NGINX or Traefik
-- TLS: `cert-manager`
-- Bare‑metal LB: MetalLB / kube‑vip
-
-::right::
-
-## Honest trade‑offs
-
-**Advantages of self‑hosting**
-
-- ==Full control== over:
-  - k8s version and config
-  - Networking & storage stack
-  - Security tooling
-- Works in:
-  - On‑prem, air‑gapped, sovereign environments
-
-**Costs**
-
-- ==Operational burden==:
-  - Upgrades, DR, security patches
-  - On‑call for control plane issues
-- Complexity:
-  - Networking, storage, backup, security all in your lap
-- Human cost:
-  - Need infra expertise and time, continuously
+==quick recap & cheat sheet==
 
 
 ---
 layout: default
 ---
 
-# Simple decision rules
+# Simple decision flow
 
-- On a major cloud, no strong constraints?
-  - **Default:** managed k8s
-- Must run on‑prem / air‑gapped / sovereign?
-  - Self‑hosting is often justified
+- On a major cloud, no strong constraints? ==managed k8s==
+- Must run on‑prem / air‑gapped / sovereign? ==Self‑hosting== is the way to go (it's doable!)
+- Is the platform part of your model? ==Self‑hosting== is almost unavoidable
 - Team size & skills:
-  - If you cannot afford at least some dedicated infra capacity (and regular DR tests), think twice
-- SLO:
-  - The higher your SLO, the more discipline you need:
-    - GitOps
-    - Observability
-    - Tested backups and DR
+  - If you cannot afford at least some dedicated infra capacity (and regular DR tests) <mark class='red'>think twice</mark>
+  - The higher your SLO, the more staff / discipline you'll need (GitOps, o11y, backups and desaster recovery)
 
-Self‑hosting is powerful, but should be a conscious choice.
+
+<StickyNote color='emerald-light' v-drag="[368,284,226,183,1]" text-align="center">
+
+<br>
+
+### Self‑hosting is `powerful`, but should be a conscious choice.
+
+</StickyNote>
+
+
+---
+layout: two-cols-title
+---
+
+::title::
+
+# Cheat sheet for self-hosting stack
+
+::left::
+
+- **Infra & OS**: Fedora CoreOS <span class='small'>(or other container-focused Linux)</span>
+- **Kubernetes**: rke2
+- **Networking**
+  - CNI: Cilium
+  - Ingress: NGINX <span class='small'>(not for long)</span> or Traefik
+  - TLS: `cert-manager`
+- **Storage & backup**
+  - Storage: Longhorn
+  - Backups:
+    - etcd snapshots
+    - Velero for PVs
+    - ==workload‑native backups== + off‑cluster storage
+
+- **Security**: Start with a basic list, then ==CIS benchmark==
+
+- **Use GitOps from the start**
+
+::right::
